@@ -8,6 +8,11 @@ LICENSE file in the root directory of this source tree.
 import torch
 import logging
 
+try:
+    import intel_extension_for_pytorch as ipex
+except ModuleNotFoundError:
+    ipex = None
+
 
 def default_batch_size():
     if torch.cuda.is_available():
@@ -16,6 +21,15 @@ def default_batch_size():
         )
         if batch_size == 0:
             logging.warning("GPU VRAM is too small. Computing on CPU.")
+    elif ipex is not None:
+        if not torch.xpu.is_available():
+            logging.warning("XPU not found, setting BS=1")
+            return 1
+        batch_size = int(
+            torch.xpu.get_device_properties(0).total_memory / 1024 / 1024 / 1000 * 0.3
+        )
+        if batch_size == 0:
+            logging.warning("XPU VRAM is too small. Computing on CPU.")
     elif torch.backends.mps.is_available():
         # I don't know if there's an equivalent API so heuristically choosing bs=4
         batch_size = 4
