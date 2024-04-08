@@ -4,6 +4,7 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 """
+
 import torch
 import logging
 
@@ -35,4 +36,7 @@ def move_to_device(model, bf16: bool = True, cuda: bool = True):
         model = model.to(torch.bfloat16)
     if cuda and torch.cuda.is_available():
         model = model.to("cuda")
+    if cuda and hasattr(torch, "xpu"):
+        if torch.xpu.is_available():
+            model = model.to("xpu")
     return model
